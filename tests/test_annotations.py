@@ -25,8 +25,7 @@ def test_annotations_preserve_values_order_and_unknowns(tmp_path: Path) -> None:
     catalog = tmp_path / "annotations.csv"
     catalog.write_text("chr_pos,name,rsid\n2_2,GENE,rs1\n", encoding="utf-8")
     source = CsvAnnotationSource(catalog)
-    with pytest.warns(UserWarning, match="1_1"):
-        actual = annotate_frequencies(frequencies, source)
+    actual = annotate_frequencies(frequencies, source)
     pd.testing.assert_frame_equal(
         actual.drop(columns=["name", "rsid"]), frequencies.to_dataframe()
     )

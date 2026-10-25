@@ -1,12 +1,11 @@
 """Add SNP metadata without changing genotype frequencies."""
 
-import warnings
 from collections.abc import Sequence
 
 import pandas as pd
+from loguru import logger
 
 from ..genotypes.frequencies import GenotypeFrequencies
-
 from .base import SnpAnnotationSource
 from .models import SnpAnnotation
 
@@ -53,6 +52,4 @@ def _warn_missing_annotations(
         if annotation is None
     ]
     if missing:
-        warnings.warn(
-            "No SNP annotation for: " + ", ".join(missing), UserWarning, stacklevel=3
-        )
+        logger.warning("No SNP annotation for: {}", ", ".join(missing))

@@ -47,7 +47,7 @@ def test_stdout(vcf: Path, cohort: Path, catalog: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "TEST" in result.output
-    assert "rs123" in result.output
+    assert "rs123" in result.stdout
 
 
 @pytest.mark.parametrize("option", ["-o", "--output_dir", "--output-dir"])

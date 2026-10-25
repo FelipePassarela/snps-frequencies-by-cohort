@@ -5,13 +5,14 @@ from typing import Annotated
 
 import pandas as pd
 import typer
+from loguru import logger
 
+from .analysis import calculate_cohort_frequencies
 from .annotations import (
     CsvAnnotationSource,
     SnpAnnotationSource,
 )
 from .cohorts import read_cohorts
-from .analysis import calculate_cohort_frequencies
 
 app = typer.Typer(add_completion=False)
 
@@ -57,7 +58,7 @@ def frequencies(
     """Show genotype frequencies from a VCF file, separated by cohorts."""
     source = _resolve_annotation_source(annotations)
     for cohort in read_cohorts(cohorts):
-        typer.echo(f"⚙️ Processing cohort: {cohort.name}")
+        logger.info("Processing cohort: {}", cohort.name)
         result = calculate_cohort_frequencies(vcf_path, cohort, source)
         _output_frequencies(result, cohort.name, output_dir)
 
@@ -78,4 +79,4 @@ def _output_frequencies(
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{cohort_name}.csv"
     frequencies.to_csv(output_path)
-    typer.echo(f"✅ Genotype frequencies saved to {output_path}")
+    logger.success("Genotype frequencies saved to {}", output_path)
