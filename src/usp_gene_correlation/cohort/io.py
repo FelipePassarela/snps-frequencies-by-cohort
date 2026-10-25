@@ -1,20 +1,13 @@
-"""Read cohort sample identifiers."""
+"""Read cohort definitions from CSV files."""
 
 import re
-from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
 
+from .domain import Cohort
+
 _SAMPLE_ID_PATTERN = re.compile(r"^C\d+-ExC\d+-xgenV\d+$")
-
-
-@dataclass(frozen=True)
-class Cohort:
-    """A named group of sample identifiers."""
-
-    name: str
-    sample_ids: tuple[str, ...]
 
 
 def read_cohorts(paths: list[Path]) -> list[Cohort]:

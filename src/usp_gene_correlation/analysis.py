@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from .annotations import SnpAnnotationSource, annotate_frequencies
-from .cohorts import Cohort
+from .cohort import Cohort
 from .genotypes import read_genotypes_from_vcf
 
 

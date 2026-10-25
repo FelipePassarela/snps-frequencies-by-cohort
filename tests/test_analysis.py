@@ -2,7 +2,7 @@ from pathlib import Path
 
 from usp_gene_correlation.analysis import calculate_cohort_frequencies
 from usp_gene_correlation.annotations import SnpAnnotation, SnpAnnotationSource
-from usp_gene_correlation.cohorts import Cohort
+from usp_gene_correlation.cohort import Cohort
 
 
 class ApiLikeSource(SnpAnnotationSource):

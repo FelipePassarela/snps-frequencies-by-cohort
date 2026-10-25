@@ -12,7 +12,7 @@ from .annotations import (
     CsvAnnotationSource,
     SnpAnnotationSource,
 )
-from .cohorts import read_cohorts
+from .cohort import read_cohorts
 
 app = typer.Typer(add_completion=False)
 
@@ -55,7 +55,7 @@ def frequencies(
         ),
     ] = None,
 ) -> None:
-    """Show genotype frequencies from a VCF file, separated by cohorts."""
+    """Show genotype frequencies from a VCF file, separated by cohort."""
     source = _resolve_annotation_source(annotations)
     for cohort in read_cohorts(cohorts):
         logger.info("Processing cohort: {}", cohort.name)

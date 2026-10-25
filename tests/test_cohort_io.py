@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from usp_gene_correlation.cohorts import Cohort, read_cohorts
+from usp_gene_correlation.cohort.domain import Cohort
+from usp_gene_correlation.cohort.io import read_cohorts
 
 
 def test_different_sizes_preserve_order_and_unique_valid_ids(tmp_path: Path) -> None:
