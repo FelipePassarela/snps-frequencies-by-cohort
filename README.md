@@ -78,16 +78,28 @@ amostras correspondentes ou VCFs sem variantes geram erro.
 - `cohorts.py`: objeto imutável `Cohort(name, sample_ids)` e leitura de CSVs
   por `read_cohorts(paths) -> list[Cohort]`. Os IDs são tuplas, sem preenchimento
   de linhas ausentes entre coortes de tamanhos diferentes.
-- `genotypes.py`: leitura VCF e frequências.
+- `genotypes/io.py`: leitura VCF e adaptação das chamadas para uma matriz.
+- `genotypes/domain.py`: classe `GenotypeMatrix`, normalização, validação e frequências,
+  sem dependência de arquivos ou de pysam. A API pública é reexportada em
+  `genotypes/__init__.py`.
 - `annotations/`: pacote com API pública em `__init__.py`, modelo e normalização em
   `models.py`, contrato em `base.py`, fonte CSV e catálogo padrão em `csv.py` e enriquecimento em `enrichment.py`.
 - `src/usp_gene_correlation/data/snps_annotations.csv`: catálogo distribuído.
 - `tests/conftest.py`: fixtures compartilhadas de VCF, coorte e catálogo sintéticos.
 - `tests/test_annotations.py`, `test_cohorts.py`, `test_genotypes.py` e
-  `test_cli.py`: testes separados por responsabilidade, incluindo integração da CLI.
+  `test_genotypes_io.py` e `test_cli.py`: testes separados por responsabilidade,
+  incluindo integração da CLI.
 - `scripts/verify_local_outputs.py`: verificação manual dos dados locais;
   atualiza os CSVs apenas após confirmar que as frequências foram preservadas.
 
 O `uv.lock` fixa as dependências; `uv sync --locked` reproduz o ambiente.
 `requirements.txt` é uma exportação para ferramentas que usam pip.
 Para atualizá-lo: `uv export --no-dev --no-emit-project --format requirements-txt --output-file requirements.txt`.
+
+### Matriz genotípica
+
+`genotypes_matrix(vcf_path, ids_to_keep)` retorna um `GenotypeMatrix`.
+A classe valida e normaliza as chamadas na construção, expõe `sample_ids`
+e `variant_ids` como tuplas e calcula frequências com `matrix.frequencies()`.
+`matrix.to_dataframe()` retorna uma cópia para análise sem alterar a matriz.
+A função `genotype_frequencies(df)` continua disponível para DataFrames.

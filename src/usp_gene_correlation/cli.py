@@ -11,7 +11,7 @@ from .annotations import (
     annotate_frequencies,
 )
 from .cohorts import read_cohorts
-from .genotypes import genotype_frequencies, genotypes_matrix
+from .genotypes import read_genotypes_from_vcf
 
 app = typer.Typer(add_completion=False)
 
@@ -67,10 +67,8 @@ def frequencies(
     for cohort in read_cohorts(cohorts):
         typer.echo(f"⚙️ Processing cohort: {cohort.name}")
 
-        df_genotypes = genotypes_matrix(vcf_path, ids_to_keep=cohort.sample_ids)
-        df_frequencies = annotate_frequencies(
-            genotype_frequencies(df_genotypes), source
-        )
+        matrix = read_genotypes_from_vcf(vcf_path, ids_to_keep=cohort.sample_ids)
+        df_frequencies = annotate_frequencies(matrix.frequencies(), source)
 
         if output_dir:
             output_dir.mkdir(parents=True, exist_ok=True)
