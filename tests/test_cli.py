@@ -6,8 +6,7 @@ import pandas as pd
 import pytest
 from typer.testing import CliRunner
 
-from usp_gene_correlation.annotations import SnpAnnotation
-from usp_gene_correlation.cli import app, main
+from usp_gene_correlation.cli import app
 
 
 def test_module_cli(vcf: Path, cohort: Path, catalog: Path, tmp_path: Path) -> None:
@@ -42,15 +41,13 @@ def test_module_cli(vcf: Path, cohort: Path, catalog: Path, tmp_path: Path) -> N
     assert df.loc[0, "0/1"] == 1
 
 
-def test_injected_provider_and_stdout(
-    vcf: Path, cohort: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    class ApiLikeSource:
-        def lookup(self, position: str) -> SnpAnnotation:
-            return SnpAnnotation(position, "INJECTED", "rs456")
-
-    main([str(vcf), str(cohort)], annotation_source=ApiLikeSource())
-    assert "INJECTED" in capsys.readouterr().out
+def test_stdout(vcf: Path, cohort: Path, catalog: Path) -> None:
+    result = CliRunner().invoke(
+        app, [str(vcf), str(cohort), "--annotations", str(catalog)]
+    )
+    assert result.exit_code == 0, result.output
+    assert "TEST" in result.output
+    assert "rs123" in result.output
 
 
 @pytest.mark.parametrize("option", ["-o", "--output_dir", "--output-dir"])

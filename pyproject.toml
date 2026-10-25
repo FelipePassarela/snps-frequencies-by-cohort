@@ -15,7 +15,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-usp-gene-correlation = "usp_gene_correlation.cli:main"
+usp-gene-correlation = "usp_gene_correlation.cli:app"
 
 [dependency-groups]
 dev = ["pytest>=8.3"]

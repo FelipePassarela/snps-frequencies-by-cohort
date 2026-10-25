@@ -1,24 +1,23 @@
 """Typer command line interface for cohort genotype frequencies."""
 
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated
 
+import pandas as pd
 import typer
 
 from .annotations import (
     CsvAnnotationSource,
     SnpAnnotationSource,
-    annotate_frequencies,
 )
 from .cohorts import read_cohorts
-from .genotypes import read_genotypes_from_vcf
+from .analysis import calculate_cohort_frequencies
 
 app = typer.Typer(add_completion=False)
 
 
 @app.command()
 def frequencies(
-    ctx: typer.Context,
     vcf_path: Annotated[
         Path,
         typer.Argument(
@@ -56,33 +55,27 @@ def frequencies(
     ] = None,
 ) -> None:
     """Show genotype frequencies from a VCF file, separated by cohorts."""
-    source = cast(SnpAnnotationSource | None, ctx.obj)
-    if source is None:
-        source = (
-            CsvAnnotationSource(annotations)
-            if annotations
-            else CsvAnnotationSource.from_default_catalog()
-        )
-
+    source = _resolve_annotation_source(annotations)
     for cohort in read_cohorts(cohorts):
         typer.echo(f"⚙️ Processing cohort: {cohort.name}")
-
-        matrix = read_genotypes_from_vcf(vcf_path, ids_to_keep=cohort.sample_ids)
-        df_frequencies = annotate_frequencies(matrix.frequencies(), source)
-
-        if output_dir:
-            output_dir.mkdir(parents=True, exist_ok=True)
-            cohort_output_path = output_dir / f"{cohort.name}.csv"
-            df_frequencies.to_csv(cohort_output_path)
-            typer.echo(f"✅ Genotype frequencies saved to {cohort_output_path}")
-        else:
-            typer.echo(df_frequencies)
+        result = calculate_cohort_frequencies(vcf_path, cohort, source)
+        _output_frequencies(result, cohort.name, output_dir)
 
 
-def main(
-    argv: list[str] | None = None,
-    *,
-    annotation_source: SnpAnnotationSource | None = None,
+def _resolve_annotation_source(catalog_path: Path | None) -> SnpAnnotationSource:
+    if catalog_path is not None:
+        return CsvAnnotationSource(catalog_path)
+    return CsvAnnotationSource.from_default_catalog()
+
+
+def _output_frequencies(
+    frequencies: pd.DataFrame, cohort_name: str, output_dir: Path | None
 ) -> None:
-    """Run the CLI, preserving programmatic arguments and provider injection."""
-    app(args=argv, obj=annotation_source, standalone_mode=argv is None)
+    if output_dir is None:
+        typer.echo(frequencies)
+        return
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{cohort_name}.csv"
+    frequencies.to_csv(output_path)
+    typer.echo(f"✅ Genotype frequencies saved to {output_path}")

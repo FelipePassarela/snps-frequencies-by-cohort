@@ -50,7 +50,8 @@ Variantes não encontradas são preservadas com campos vazios e aviso.
 `SnpAnnotationSource` define `lookup(chr_pos) -> SnpAnnotation | None`.
 A implementação `CsvAnnotationSource` carrega e valida o catálogo CSV.
 Um adaptador de API pode implementar esse mesmo contrato e ser injetado em
-`main(argv, annotation_source=fonte)` ou `annotate_frequencies(frequencias, fonte)`;
+`calculate_cohort_frequencies(vcf_path, coorte, fonte)` (em `analysis.py`)
+ou `annotate_frequencies(frequencias, fonte)`;
 nenhuma consulta de rede acontece durante a execução padrão.
 
 ## Entradas e saída
@@ -74,7 +75,8 @@ amostras correspondentes ou VCFs sem variantes geram erro.
 
 ## Organização
 
-- `cli.py`: CLI Typer com validação de caminhos e execução por coorte.
+- `cli.py`: aplicação Typer usada diretamente como ponto de entrada.
+- `analysis.py`: cálculo por coorte com fonte de anotações injetável.
 - `cohorts.py`: objeto imutável `Cohort(name, sample_ids)` e leitura de CSVs
   por `read_cohorts(paths) -> list[Cohort]`. Os IDs são tuplas, sem preenchimento
   de linhas ausentes entre coortes de tamanhos diferentes.
