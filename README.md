@@ -22,7 +22,7 @@ sem saída, imprime o resultado. Também é possível usar
 
 ## Anotações
 
-O catálogo padrão está em `src/usp_gene_correlation/data/snps_annotations.csv` e é
+O catálogo padrão está em `src/usp_gene_correlation/annotations/snps_annotations.csv` e é
 incluído no pacote instalado. Contém 44 SNPs: 19 transcritos da imagem
 fornecida pelo usuário (longa) e 25 da tabela enviada na conversa (grave).
 Os nomes foram preservados como fornecidos, sem validação em API externa.
@@ -85,7 +85,7 @@ amostras correspondentes ou VCFs sem variantes geram erro.
   `genotypes/__init__.py`.
 - `annotations/`: pacote com API pública em `__init__.py`, modelo e normalização em
   `models.py`, contrato em `base.py`, fonte CSV e catálogo padrão em `csv.py` e enriquecimento em `enrichment.py`.
-- `src/usp_gene_correlation/data/snps_annotations.csv`: catálogo distribuído.
+- `src/usp_gene_correlation/annotations/snps_annotations.csv`: catálogo distribuído.
 - `tests/conftest.py`: fixtures compartilhadas de VCF, coorte e catálogo sintéticos.
 - `tests/test_annotations.py`, `test_cohorts.py`, `test_genotypes.py` e
   `test_genotypes_io.py` e `test_cli.py`: testes separados por responsabilidade,

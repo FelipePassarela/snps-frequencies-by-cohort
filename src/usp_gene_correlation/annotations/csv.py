@@ -23,8 +23,7 @@ class CsvAnnotationSource(SnpAnnotationSource):
 
     @classmethod
     def from_default_catalog(cls) -> Self:
-        package_dir = Path(__file__).resolve().parent.parent
-        catalog = package_dir / "data" / "snps_annotations.csv"
+        catalog = Path(__file__).resolve().parent / "snps_annotations.csv"
         return cls(catalog)
 
 
