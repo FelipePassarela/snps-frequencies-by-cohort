@@ -1,55 +1,87 @@
-# Resumo
+# Frequências genotípicas por coorte
 
-Script para calcular frequências de genótipos a partir de um arquivo VCF, separadas por coortes. O script lê um VCF com genótipos e um ou mais arquivos CSV representando coortes (cada CSV contendo IDs de amostras), filtra as amostras de interesse e gera, para cada coorte, um CSV com as frequências de genótipos por variante.
+Pacote Python gerenciado por uv, com código em `src/usp_gene_correlation`.
+Calcula frequências de um VCF e acrescenta `name` e `rsid` por posição.
 
-## Requisitos
+## Instalação e execução
 
-- **Python:** 3.13+
+Python 3.13+. Use Linux, macOS ou WSL para a dependência pysam.
+No Windows, execute os comandos dentro do WSL; não compartilhe um ambiente
+virtual Windows com o ambiente Linux.
 
-Instalação rápida (recomendado em um virtualenv):
-
-```pwsh
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+```sh
+uv sync
+uv run usp-gene-correlation data/longa.vcf "data/cohorts/WES CEGH x UFES(INFECTADOS).csv" -o output/longa
+uv run usp-gene-correlation data/grave.vcf "data/cohorts/WES CEGH x UFES(INFECTADOS).csv" -o output/grave
+uv run pytest
 ```
 
-Se for usar um gerenciador (ex.: `pyproject.toml`), siga seu fluxo (`poetry`, `pipx`, etc.).
+Aceita vários arquivos de coorte. `--output-dir`, `--output_dir` e `-o` são equivalentes;
+sem saída, imprime o resultado. Também é possível usar
+`uv run python -m usp_gene_correlation ...`.
 
-## Uso
+## Anotações
 
-Exemplo básico (PowerShell):
+O catálogo padrão está em `src/usp_gene_correlation/data/snps_annotations.csv` e é
+incluído no pacote instalado. Contém 44 SNPs: 19 transcritos da imagem
+fornecida pelo usuário (longa) e 25 da tabela enviada na conversa (grave).
+Os nomes foram preservados como fornecidos, sem validação em API externa.
 
-```pwsh
-python .\main.py .\data\COVID-SNPs3.recode.vcf \
- "data\cohorts\WES CEGH x UFES(90+).csv" \
- "data\cohorts\WES CEGH x UFES(INFECTADOS).csv" \
- -o .\frequencies\
+Para substituir o catálogo:
+
+```sh
+uv run usp-gene-correlation data/longa.vcf coorte.csv --annotations meus_snps.csv -o output
 ```
 
-- Argumentos:
-  - `vcf_path` : caminho para o arquivo VCF.
-  - `cohorts` : um ou mais arquivos CSV de coorte (separados por espaço).
-  - `--output_dir` / `-o` : diretório de saída opcional; se não informado, as frequências são impressas no stdout.
+Formato obrigatório:
 
-## Formato de entrada das coortes
+```csv
+chr_pos,name,rsid
+chr10_69338539,HK1,rs7912524
+```
 
-- O script lê coortes como arquivos CSV. Os arquivos de coorte não precisam ter cabeçalho; o script pesquisa a coluna que contém IDs de amostra.
-- O script procura uma coluna cuja célula case com o padrão: `C01234-ExC123-xgenV1`. Se nenhum arquivo de coorte contiver uma coluna com esse padrão, o script lançará um `ValueError`.
+As posições são de base 1 e precisam corresponder à mesma montagem do VCF.
+Os arquivos locais têm referências a hg38 no cabeçalho; o catálogo fornecido
+deve ser usado com esses dados. Não há conversão entre montagens nem
+desambiguação por alelos. `10_69338539` e `chr10_69338539` são equivalentes.
+Posições duplicadas, campos incompletos e rsIDs inválidos são rejeitados.
+Variantes não encontradas são preservadas com campos vazios e aviso.
 
-Observação: Garanta que os IDs nas coortes correspondam exatamente aos nomes das amostras no cabeçalho do VCF.
+`SnpAnnotationSource` define `lookup(chr_pos) -> SnpAnnotation | None`.
+A implementação `CsvAnnotationSource` carrega e valida o catálogo CSV.
+Um adaptador de API pode implementar esse mesmo contrato e ser injetado em
+`main(argv, annotation_source=fonte)` ou `annotate_frequencies(df, fonte)`;
+nenhuma consulta de rede acontece durante a execução padrão.
 
-## Saída
+## Entradas e saída
 
-- Para cada coorte passada, o script gera um CSV no diretório de saída com o nome do arquivo de coorte. Exemplo: `entrada\coorte1.csv` -> `saida\coorte1.csv`.
-- O CSV resultante contém as variantes como linhas (index no formato `chrom_pos`, por exemplo `chr1_123456`) e colunas com as frequências relativas dos genótipos: `0/0`, `0/1`, `1/1`, `./.`. Valores estão normalizados por variante (soma = 1 quando há genótipos chamados).
+Os CSVs de coorte podem ter cabeçalho; a coluna de IDs é detectada pelo padrão
+`C01234-ExC123-xgenV1`. Cabeçalhos e outros valores são descartados, assim
+como IDs duplicados. Somente amostras presentes no VCF são incluídas.
 
-## Como o script funciona (resumo técnico)
+A saída preserva a ordem das variantes e as colunas de frequência existentes:
 
-- `get_cohort_ids(cohorts_path)` : lê os CSVs de coorte, detecta a coluna de IDs usando regex, alinha as colunas (preenchendo com `NaN` quando necessário) e retorna um `DataFrame` com uma coluna por coorte.
-- `genotypes_matrix(vcf_path, ids_to_keep)` : abre o VCF com `pysam`, itera sobre os registros e monta um `DataFrame` com amostras nas linhas e variantes nas colunas. Genótipos são strings como `0/0`, `0/1`, `1/1` ou `./.`.
-- `genotype_frequencies(df)` : conta ocorrências de cada genótipo por variante e calcula frequência relativa (contagem / total de amostras com chamada).
+```text
+variant,name,rsid,0/0,0/1,1/1,./.
+```
 
-## Dicas e observações
+O denominador inclui todas as amostras selecionadas, inclusive chamadas
+ausentes. Genótipos parcialmente ausentes são contados como `./.`;
+heterozigotos invertidos e faseados são normalizados. Categorias ausentes
+recebem zero. Genótipos chamados não diploides ou multialélicos são
+rejeitados para evitar perder frequências silenciosamente. Coortes sem
+amostras correspondentes ou VCFs sem variantes geram erro.
 
-- Nomes de amostras no VCF devem corresponder aos IDs dos CSVs de coorte.
-- Para VCFs muito grandes, a matriz (amostras × variantes) pode consumir muita memória. Se possível, gere um VCF filtrado apenas com as variantes de interesse ou use amostras limitadas via `ids_to_keep` (passando apenas coorte(s) desejadas).
+## Organização
+
+- `cli.py`: CLI Typer com validação de caminhos e execução por coorte.
+- `cohorts.py`: leitura e validação dos IDs.
+- `genotypes.py`: leitura VCF e frequências.
+- `annotations/`: pacote com API pública em `__init__.py`, modelo e normalização em
+  `models.py`, contrato em `base.py`, fonte CSV e catálogo padrão em `csv.py` e enriquecimento em `enrichment.py`.
+- `src/usp_gene_correlation/data/snps_annotations.csv`: catálogo distribuído.
+- `tests/`: testes unitários e integração com VCF sintético.
+
+O `uv.lock` fixa as dependências; `uv sync --locked` reproduz o ambiente.
+`requirements.txt` é uma exportação para ferramentas que usam pip.
+Para atualizá-lo: `uv export --no-dev --no-emit-project --format requirements-txt --output-file requirements.txt`.
