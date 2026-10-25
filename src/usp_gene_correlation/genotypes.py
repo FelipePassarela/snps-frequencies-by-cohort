@@ -1,11 +1,12 @@
 """VCF reading and genotype frequencies."""
+from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
 import pandas as pd
 import pysam
 
 def genotypes_matrix(
-    vcf_path: Path, ids_to_keep: list[str] | None = None
+    vcf_path: Path, ids_to_keep: Sequence[str] | None = None
 ) -> pd.DataFrame:
     """Read VCF and return a DataFrame with samples as rows and variants as columns.
 
@@ -14,7 +15,7 @@ def genotypes_matrix(
 
     Args:
         vcf_path (Path): Path to the VCF file.
-        ids_to_keep (list[str]): List of sample IDs to include in the DataFrame. If None, include all samples.
+        ids_to_keep (Sequence[str]): Sequence of sample IDs to include in the DataFrame. If None, include all samples.
 
     Returns:
         pd.DataFrame: DataFrame with samples as rows and variants as columns.
@@ -27,7 +28,7 @@ def genotypes_matrix(
 
 
 def _read_genotypes(
-    vcf: pysam.VariantFile, ids_to_keep: list[str] | None
+    vcf: pysam.VariantFile, ids_to_keep: Sequence[str] | None
 ) -> pd.DataFrame:
     samples: list[str] = list(vcf.header.samples)
     if ids_to_keep is not None:

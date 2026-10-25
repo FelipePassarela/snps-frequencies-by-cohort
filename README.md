@@ -75,12 +75,18 @@ amostras correspondentes ou VCFs sem variantes geram erro.
 ## Organização
 
 - `cli.py`: CLI Typer com validação de caminhos e execução por coorte.
-- `cohorts.py`: leitura e validação dos IDs.
+- `cohorts.py`: objeto imutável `Cohort(name, sample_ids)` e leitura de CSVs
+  por `read_cohorts(paths) -> list[Cohort]`. Os IDs são tuplas, sem preenchimento
+  de linhas ausentes entre coortes de tamanhos diferentes.
 - `genotypes.py`: leitura VCF e frequências.
 - `annotations/`: pacote com API pública em `__init__.py`, modelo e normalização em
   `models.py`, contrato em `base.py`, fonte CSV e catálogo padrão em `csv.py` e enriquecimento em `enrichment.py`.
 - `src/usp_gene_correlation/data/snps_annotations.csv`: catálogo distribuído.
-- `tests/`: testes unitários e integração com VCF sintético.
+- `tests/conftest.py`: fixtures compartilhadas de VCF, coorte e catálogo sintéticos.
+- `tests/test_annotations.py`, `test_cohorts.py`, `test_genotypes.py` e
+  `test_cli.py`: testes separados por responsabilidade, incluindo integração da CLI.
+- `scripts/verify_local_outputs.py`: verificação manual dos dados locais;
+  atualiza os CSVs apenas após confirmar que as frequências foram preservadas.
 
 O `uv.lock` fixa as dependências; `uv sync --locked` reproduz o ambiente.
 `requirements.txt` é uma exportação para ferramentas que usam pip.

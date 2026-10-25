@@ -10,7 +10,7 @@ from .annotations import (
     SnpAnnotationSource,
     annotate_frequencies,
 )
-from .cohorts import get_cohort_ids
+from .cohorts import read_cohorts
 from .genotypes import genotype_frequencies, genotypes_matrix
 
 app = typer.Typer(add_completion=False)
@@ -64,20 +64,17 @@ def frequencies(
             else CsvAnnotationSource.from_default_catalog()
         )
 
-    cohort_ids = get_cohort_ids(cohorts)
+    for cohort in read_cohorts(cohorts):
+        typer.echo(f"⚙️ Processing cohort: {cohort.name}")
 
-    for cohort_name in cohort_ids.columns:
-        typer.echo(f"⚙️ Processing cohort: {cohort_name}")
-
-        ids_to_keep: list[str] = cohort_ids[cohort_name].dropna().tolist()
-        df_genotypes = genotypes_matrix(vcf_path, ids_to_keep=ids_to_keep)
+        df_genotypes = genotypes_matrix(vcf_path, ids_to_keep=cohort.sample_ids)
         df_frequencies = annotate_frequencies(
             genotype_frequencies(df_genotypes), source
         )
 
         if output_dir:
             output_dir.mkdir(parents=True, exist_ok=True)
-            cohort_output_path = output_dir / f"{cohort_name}.csv"
+            cohort_output_path = output_dir / f"{cohort.name}.csv"
             df_frequencies.to_csv(cohort_output_path)
             typer.echo(f"✅ Genotype frequencies saved to {cohort_output_path}")
         else:
