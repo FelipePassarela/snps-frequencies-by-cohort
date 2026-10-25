@@ -1,19 +1,16 @@
 import pandas as pd
 import pytest
 
-from usp_gene_correlation.genotypes.domain import GenotypeMatrix, genotype_frequencies
+from usp_gene_correlation.genotypes.matrix import GenotypeMatrix, genotype_frequencies
 
 
 def test_frequencies() -> None:
     frame = pd.DataFrame({"chr1_1": ["0/0", "1|0", "1/1", "0/.", "./."]})
-    result = genotype_frequencies(frame)
+    result = genotype_frequencies(frame).to_dataframe()
     assert result.loc["chr1_1"].tolist() == pytest.approx([0.2, 0.2, 0.2, 0.4])
-    assert genotype_frequencies(pd.DataFrame({"v": ["0/0"]})).iloc[0].tolist() == [
-        1,
-        0,
-        0,
-        0,
-    ]
+    assert genotype_frequencies(pd.DataFrame({"v": ["0/0"]})).to_dataframe().iloc[
+        0
+    ].tolist() == [1, 0, 0, 0]
 
 
 @pytest.mark.parametrize(
@@ -37,7 +34,12 @@ def test_matrix_normalizes_calls_and_preserves_axis_order() -> None:
     assert source.loc["sample2", "chr2_2"] == "1|0"
     assert source.index.name is None
     assert source.columns.name is None
-    assert matrix.frequencies().loc["chr2_2"].tolist() == [0, .5, 0, .5]
+    assert matrix.frequencies().to_dataframe().loc["chr2_2"].tolist() == [
+        0,
+        0.5,
+        0,
+        0.5,
+    ]
 
 
 def test_matrix_isolated_from_input_and_export_mutations() -> None:
@@ -47,7 +49,7 @@ def test_matrix_isolated_from_input_and_export_mutations() -> None:
     exported = matrix.to_dataframe()
     exported.iloc[0, 0] = "1/2"
     assert matrix.to_dataframe().iloc[0, 0] == "0/0"
-    assert matrix.frequencies().iloc[0].tolist() == [1, 0, 0, 0]
+    assert matrix.frequencies().to_dataframe().iloc[0].tolist() == [1, 0, 0, 0]
 
 
 @pytest.mark.parametrize(

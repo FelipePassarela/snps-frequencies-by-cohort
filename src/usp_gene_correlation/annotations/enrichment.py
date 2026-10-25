@@ -5,17 +5,19 @@ from collections.abc import Sequence
 
 import pandas as pd
 
+from ..genotypes.frequencies import GenotypeFrequencies
+
 from .base import SnpAnnotationSource
 from .models import SnpAnnotation
 
 
 def annotate_frequencies(
-    frequencies: pd.DataFrame, source: SnpAnnotationSource
+    frequencies: GenotypeFrequencies, source: SnpAnnotationSource
 ) -> pd.DataFrame:
     """Preserve row order and all frequency values; unknown annotations stay blank."""
-    positions = [str(position) for position in frequencies.index]
+    positions = frequencies.variant_ids
     annotations = _lookup_annotations(positions, source)
-    result = _with_annotation_columns(frequencies, annotations)
+    result = _with_annotation_columns(frequencies.to_dataframe(), annotations)
     _warn_missing_annotations(positions, annotations)
     return result
 

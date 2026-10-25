@@ -2,7 +2,9 @@
 
 import pandas as pd
 
-_GENOTYPE_ORDER = ("0/0", "0/1", "1/1", "./.")
+from .constants import GENOTYPE_ORDER
+from .frequencies import GenotypeFrequencies
+
 _GENOTYPE_ALIASES = {
     "1/0": "0/1",
     "0|1": "0/1",
@@ -20,6 +22,7 @@ class GenotypeMatrix:
             raise ValueError(
                 "No samples or variants available for frequency calculation."
             )
+
         normalized = data.map(_normalize_genotype)
         _validate_genotypes(normalized)
         self._data = normalized.rename_axis(index="sample", columns="variant")
@@ -36,12 +39,12 @@ class GenotypeMatrix:
         """Return a copy so callers cannot modify the validated matrix."""
         return self._data.copy()
 
-    def frequencies(self) -> pd.DataFrame:
+    def frequencies(self) -> GenotypeFrequencies:
         """Calculate frequencies, including missing calls in the denominator."""
-        return _calculate_frequencies(self._data)
+        return GenotypeFrequencies(_calculate_frequencies(self._data))
 
 
-def genotype_frequencies(df: pd.DataFrame) -> pd.DataFrame:
+def genotype_frequencies(df: pd.DataFrame) -> GenotypeFrequencies:
     """Calculate frequencies from a DataFrame using the genotype domain model."""
     return GenotypeMatrix(df).frequencies()
 
@@ -53,7 +56,7 @@ def _normalize_genotype(genotype: str) -> str:
 
 
 def _validate_genotypes(genotypes: pd.DataFrame) -> None:
-    unsupported = set(genotypes.to_numpy().ravel()) - set(_GENOTYPE_ORDER)
+    unsupported = set(genotypes.to_numpy().ravel()) - set(GENOTYPE_ORDER)
     if unsupported:
         raise ValueError(
             f"Only diploid biallelic genotypes are supported: {unsupported}"
@@ -64,6 +67,6 @@ def _calculate_frequencies(genotypes: pd.DataFrame) -> pd.DataFrame:
     counts = genotypes.apply(pd.Series.value_counts).fillna(0).astype(int).T
     totals = counts.sum(axis=1)
     frequencies = counts.div(totals, axis=0)
-    frequencies = frequencies.reindex(columns=_GENOTYPE_ORDER, fill_value=0.0)
+    frequencies = frequencies.reindex(columns=GENOTYPE_ORDER, fill_value=0.0)
     frequencies.columns.name = "genotype"
     return frequencies

@@ -8,7 +8,7 @@ from typing import cast
 import pandas as pd
 import pysam
 
-from .domain import GenotypeMatrix
+from .matrix import GenotypeMatrix
 
 
 @dataclass

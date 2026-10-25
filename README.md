@@ -50,7 +50,7 @@ Variantes não encontradas são preservadas com campos vazios e aviso.
 `SnpAnnotationSource` define `lookup(chr_pos) -> SnpAnnotation | None`.
 A implementação `CsvAnnotationSource` carrega e valida o catálogo CSV.
 Um adaptador de API pode implementar esse mesmo contrato e ser injetado em
-`main(argv, annotation_source=fonte)` ou `annotate_frequencies(df, fonte)`;
+`main(argv, annotation_source=fonte)` ou `annotate_frequencies(frequencias, fonte)`;
 nenhuma consulta de rede acontece durante a execução padrão.
 
 ## Entradas e saída
@@ -79,7 +79,8 @@ amostras correspondentes ou VCFs sem variantes geram erro.
   por `read_cohorts(paths) -> list[Cohort]`. Os IDs são tuplas, sem preenchimento
   de linhas ausentes entre coortes de tamanhos diferentes.
 - `genotypes/io.py`: leitura VCF e adaptação das chamadas para uma matriz.
-- `genotypes/domain.py`: classe `GenotypeMatrix`, normalização, validação e frequências,
+- `genotypes/frequencies.py`: classe `GenotypeFrequencies` e validação das frequências.
+- `genotypes/domain.py`: classe `GenotypeMatrix`, normalização, validação e cálculo,
   sem dependência de arquivos ou de pysam. A API pública é reexportada em
   `genotypes/__init__.py`.
 - `annotations/`: pacote com API pública em `__init__.py`, modelo e normalização em
@@ -103,3 +104,12 @@ A classe valida e normaliza as chamadas na construção, expõe `sample_ids`
 e `variant_ids` como tuplas e calcula frequências com `matrix.frequencies()`.
 `matrix.to_dataframe()` retorna uma cópia para análise sem alterar a matriz.
 A função `genotype_frequencies(df)` continua disponível para DataFrames.
+
+### Frequências genotípicas
+
+`matrix.frequencies()` e `genotype_frequencies(df)` retornam
+`GenotypeFrequencies`. A classe exige as quatro categorias, valores numéricos
+entre 0 e 1 e soma 1 por variante (tolerância absoluta de 1e-9).
+Ela expõe `variant_ids` e `to_dataframe()`, que retorna uma cópia.
+`annotate_frequencies(frequencias, fonte)` recebe esse objeto e produz o
+DataFrame de saída com nomes e rsIDs.
