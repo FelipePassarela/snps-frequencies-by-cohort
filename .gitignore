@@ -9,5 +9,8 @@ wheels/
 # Virtual environments
 .venv
 
+.idea/
+
 data/
+output/
 .pytest_cache/
