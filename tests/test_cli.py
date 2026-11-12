@@ -11,6 +11,20 @@ from usp_gene_correlation.cli import app
 from usp_gene_correlation.ordering import read_gene_order
 
 
+@pytest.fixture
+def catalog(tmp_path: Path) -> Path:
+    catalog = tmp_path / "catalog.csv"
+    catalog.write_text("chr_pos,name,rsid\nchr1_1,TEST,rs123\n")
+    return catalog
+
+
+@pytest.fixture
+def gene_order(tmp_path: Path) -> Path:
+    order = tmp_path / "gene_order.csv"
+    order.write_text("name\nLERFS\nHK1\nABSENT\n")
+    return order
+
+
 def test_module_cli(vcf: Path, cohort: Path, catalog: Path, tmp_path: Path) -> None:
     out = tmp_path / "out"
     result = subprocess.run(

@@ -21,14 +21,12 @@ def test_unsupported_or_empty_genotypes(frame: pd.DataFrame) -> None:
         genotype_frequencies(frame)
 
 
-def test_matrix_normalizes_calls_and_preserves_axis_order() -> None:
+def test_matrix_normalizes_calls() -> None:
     source = pd.DataFrame(
         {"chr2_2": ["1|0", "0/."], "chr1_1": ["0/0", "1/1"]},
         index=["sample2", "sample1"],
     )
     matrix = GenotypeMatrix(source)
-    assert matrix.sample_ids == ("sample2", "sample1")
-    assert matrix.variant_ids == ("chr2_2", "chr1_1")
     assert matrix.to_dataframe().loc["sample2", "chr2_2"] == "0/1"
     assert matrix.to_dataframe().loc["sample1", "chr2_2"] == "./."
     assert source.loc["sample2", "chr2_2"] == "1|0"
@@ -42,10 +40,27 @@ def test_matrix_normalizes_calls_and_preserves_axis_order() -> None:
     ]
 
 
-def test_matrix_isolated_from_input_and_export_mutations() -> None:
+def test_matrix_preserves_axis_order() -> None:
+    source = pd.DataFrame(
+        {"chr2_2": ["1|0", "0/."], "chr1_1": ["0/0", "1/1"]},
+        index=["sample2", "sample1"],
+    )
+    matrix = GenotypeMatrix(source)
+    assert matrix.sample_ids == ("sample2", "sample1")
+    assert matrix.variant_ids == ("chr2_2", "chr1_1")
+
+
+def test_matrix_isolated_from_input_mutations() -> None:
     source = pd.DataFrame({"chr1_1": ["0/0"]}, index=["sample"])
     matrix = GenotypeMatrix(source)
     source.iloc[0, 0] = "1/1"
+    assert matrix.to_dataframe().iloc[0, 0] == "0/0"
+    assert matrix.frequencies().to_dataframe().iloc[0].tolist() == [1, 0, 0, 0]
+
+
+def test_matrix_isolated_from_export_mutations() -> None:
+    source = pd.DataFrame({"chr1_1": ["0/0"]}, index=["sample"])
+    matrix = GenotypeMatrix(source)
     exported = matrix.to_dataframe()
     exported.iloc[0, 0] = "1/2"
     assert matrix.to_dataframe().iloc[0, 0] == "0/0"

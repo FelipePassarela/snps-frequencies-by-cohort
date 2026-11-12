@@ -11,7 +11,7 @@ def test_matrix_returns_frequency_object() -> None:
     assert result.to_dataframe().iloc[0].tolist() == [0.5, 0, 0, 0.5]
 
 
-def test_frequencies_preserve_variant_order_and_isolate_data() -> None:
+def test_frequencies_preserve_variant_order() -> None:
     source = pd.DataFrame(
         {"./.": [0.0, 1.0], "1/1": [0.0, 0.0], "0/1": [0.25, 0.0], "0/0": [0.75, 0.0]},
         index=["chr2_2", "chr1_1"],
@@ -19,6 +19,21 @@ def test_frequencies_preserve_variant_order_and_isolate_data() -> None:
     frequencies = GenotypeFrequencies(source)
     assert frequencies.variant_ids == ("chr2_2", "chr1_1")
     assert frequencies.to_dataframe().columns.tolist() == ["0/0", "0/1", "1/1", "./."]
+
+
+def test_frequencies_isolate_data() -> None:
+    source = pd.DataFrame(
+        {
+            "./.": [0.0, 1.0],
+            "1/1": [0.0, 0.0],
+            "0/1": [0.25, 0.0],
+            "0/0": [0.75, 0.0],
+        },
+        index=["chr2_2", "chr1_1"],
+    )
+
+    frequencies = GenotypeFrequencies(source)
+
     assert source.index.name is None
     source.iloc[0, 0] = 0.5
     exported = frequencies.to_dataframe()
