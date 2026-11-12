@@ -1,6 +1,5 @@
-"""Read dedicated gene orders and sort annotated frequencies without filtering."""
+"""Read and validate dedicated gene order CSV files."""
 
-from collections.abc import Sequence
 from pathlib import Path
 
 import pandas as pd
@@ -43,15 +42,3 @@ def _validate_gene_names(genes: pd.Series) -> None:
     duplicates = genes[genes.duplicated()]
     if not duplicates.empty:
         raise ValueError(f"Duplicate gene in order CSV: {duplicates.iloc[0]}")
-
-
-def order_frequencies(
-    frequencies: pd.DataFrame, gene_order: Sequence[str]
-) -> pd.DataFrame:
-    """Keep unlisted genes last and preserve input order within each gene."""
-    priorities = {name: rank for rank, name in enumerate(gene_order)}
-    return frequencies.sort_values(
-        by="name",
-        key=lambda names: names.map(priorities).fillna(len(gene_order)),
-        kind="stable",
-    )

@@ -10,11 +10,17 @@ from usp_gene_correlation.annotations import (
     SnpAnnotationSource,
 )
 from usp_gene_correlation.cohort import Cohort
+from usp_gene_correlation.ordering import FrequencyOrdering, GeneOrder, PreserveOrder
 
 
 class ApiLikeSource(SnpAnnotationSource):
     def lookup(self, chr_pos: str) -> SnpAnnotation:
         return SnpAnnotation(chr_pos, "INJECTED", "rs456")
+
+
+class ReverseOrder:
+    def apply(self, frequencies: pd.DataFrame) -> pd.DataFrame:
+        return frequencies.iloc[::-1]
 
 
 def test_processing_accepts_injected_source(vcf: Path) -> None:
@@ -26,17 +32,26 @@ def test_processing_accepts_injected_source(vcf: Path) -> None:
     assert result.loc["chr1_1", "0/1"] == 1
 
 
-@pytest.mark.parametrize("gene_order", [None, ("LERFS", "HK1", "ABSENT")])
-def test_processing_preserves_values_and_only_sorts_when_requested(
+@pytest.mark.parametrize(
+    ("ordering", "expected_rows"),
+    [
+        (PreserveOrder(), [0, 1, 2, 3, 4, 5]),
+        (GeneOrder(("LERFS", "HK1", "ABSENT")), [4, 1, 2, 5, 0, 3]),
+        (ReverseOrder(), [5, 4, 3, 2, 1, 0]),
+    ],
+    ids=["preserve", "gene", "custom"],
+)
+def test_processing_applies_ordering_strategy_and_preserves_values(
     unordered_vcf: Path,
     unordered_catalog: Path,
-    gene_order: tuple[str, ...] | None,
+    ordering: FrequencyOrdering,
+    expected_rows: list[int],
 ) -> None:
     result = calculate_cohort_frequencies(
         unordered_vcf,
         Cohort("test", ("C1-ExC1-xgenV1",)),
         CsvAnnotationSource(unordered_catalog),
-        gene_order=gene_order,
+        ordering=ordering,
     )
     expected = pd.DataFrame(
         [
@@ -53,7 +68,4 @@ def test_processing_preserves_values_and_only_sorts_when_requested(
         ),
         columns=pd.Index(["name", "rsid", "0/0", "0/1", "1/1", "./."], name="genotype"),
     )
-    if gene_order is not None:
-        expected = expected.iloc[[4, 1, 2, 5, 0, 3]]
-
-    pd.testing.assert_frame_equal(result, expected)
+    pd.testing.assert_frame_equal(result, expected.iloc[expected_rows])

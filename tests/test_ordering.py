@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from usp_gene_correlation.ordering import order_frequencies, read_gene_order
+from usp_gene_correlation.ordering import GeneOrder, PreserveOrder, read_gene_order
 
 
 def test_read_gene_order_handles_bom_and_trims_names(tmp_path: Path) -> None:
@@ -41,7 +41,7 @@ def test_ordering_preserves_rows_values_and_input(
 ) -> None:
     original = annotated_frequencies.copy(deep=True)
 
-    actual = order_frequencies(annotated_frequencies, ("LERFS", "HK1", "ABSENT"))
+    actual = GeneOrder(("LERFS", "HK1", "ABSENT")).apply(annotated_frequencies)
 
     pd.testing.assert_frame_equal(actual, original.iloc[[2, 1, 3, 5, 0, 4]])
     pd.testing.assert_frame_equal(annotated_frequencies, original)
@@ -51,8 +51,14 @@ def test_ordering_without_matching_genes_preserves_input_order(
     annotated_frequencies: pd.DataFrame,
 ) -> None:
     pd.testing.assert_frame_equal(
-        order_frequencies(annotated_frequencies, ("ABSENT",)), annotated_frequencies
+        GeneOrder(("ABSENT",)).apply(annotated_frequencies), annotated_frequencies
     )
+
+
+def test_preserve_order_returns_original_frequencies(
+    annotated_frequencies: pd.DataFrame,
+) -> None:
+    assert PreserveOrder().apply(annotated_frequencies) is annotated_frequencies
 
 
 @pytest.mark.parametrize(
@@ -117,6 +123,6 @@ def test_ordering_without_matching_genes_preserves_input_order(
 def test_provided_gene_order_files_match_requested_sequences(
     filename: str, expected: tuple[str, ...]
 ) -> None:
-    path = Path(__file__).resolve().parents[1] / filename
+    path = Path(__file__).resolve().parents[1] / "data" / "genotypes" / filename
 
     assert read_gene_order(path) == expected

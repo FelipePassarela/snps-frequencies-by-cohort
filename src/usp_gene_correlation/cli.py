@@ -13,7 +13,7 @@ from .annotations import (
     SnpAnnotationSource,
 )
 from .cohort import read_cohorts
-from .ordering import read_gene_order
+from .ordering import FrequencyOrdering, GeneOrder, PreserveOrder, read_gene_order
 
 app = typer.Typer(add_completion=False)
 
@@ -67,7 +67,7 @@ def frequencies(
     ] = None,
 ) -> None:
     """Show genotype frequencies from a VCF file, separated by cohort."""
-    ordered_genes = _resolve_gene_order(gene_order)
+    ordering = _resolve_ordering(gene_order)
     source = _resolve_annotation_source(annotations)
 
     for cohort in read_cohorts(cohorts):
@@ -76,17 +76,17 @@ def frequencies(
             vcf_path,
             cohort,
             source,
-            gene_order=ordered_genes,
+            ordering=ordering,
         )
         _output_frequencies(result, cohort.name, output_dir)
 
 
-def _resolve_gene_order(path: Path) -> tuple[str, ...] | None:
+def _resolve_ordering(path: Path | None) -> FrequencyOrdering:
     if path is None:
-        return None
+        return PreserveOrder()
 
     try:
-        return read_gene_order(path)
+        return GeneOrder(read_gene_order(path))
     except (OSError, ValueError) as error:
         raise typer.BadParameter(str(error), param_hint="--gene-order") from error
 
