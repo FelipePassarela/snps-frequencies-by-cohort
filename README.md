@@ -53,10 +53,26 @@ permanecem na saída com nome e rsID vazios, acompanhadas de um aviso.
 
 ## Resultados
 
-As linhas seguem a ordem das variantes no VCF:
+Por padrão, as linhas seguem a ordem das variantes no VCF e nenhum arquivo
+de ordenação é carregado. As colunas são:
 
 ```text
 variant,name,rsid,0/0,0/1,1/1,./.
+```
+
+Use `--gene-order` para ordenar os resultados por uma lista de genes:
+
+```sh
+uv run usp-gene-correlation data/longa.vcf coorte.csv --gene-order data/genotypes/longa_gene_order.csv -o output/longa
+```
+
+Para grave, use `data/genotypes/grave_gene_order.csv`. Você também pode criar
+um CSV com a coluna `name` e os genes na ordem desejada:
+
+```csv
+name
+LERFS
+HK1
 ```
 
 As frequências incluem todas as amostras selecionadas no denominador,
