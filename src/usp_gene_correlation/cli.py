@@ -13,6 +13,7 @@ from .annotations import (
     SnpAnnotationSource,
 )
 from .cohort import read_cohorts
+from .ordering import FrequencyOrdering, GeneOrder, PreserveOrder, read_gene_order
 
 app = typer.Typer(add_completion=False)
 
@@ -54,13 +55,40 @@ def frequencies(
             help="CSV with chr_pos,name,rsid (same genome assembly as VCF).",
         ),
     ] = None,
+    gene_order: Annotated[
+        Path | None,
+        typer.Option(
+            "--gene-order",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+            help="CSV with a single name column defining gene order; defaults to VCF order.",
+        ),
+    ] = None,
 ) -> None:
     """Show genotype frequencies from a VCF file, separated by cohort."""
+    ordering = _resolve_ordering(gene_order)
     source = _resolve_annotation_source(annotations)
+
     for cohort in read_cohorts(cohorts):
         logger.info("Processing cohort: {}", cohort.name)
-        result = calculate_cohort_frequencies(vcf_path, cohort, source)
+        result = calculate_cohort_frequencies(
+            vcf_path,
+            cohort,
+            source,
+            ordering=ordering,
+        )
         _output_frequencies(result, cohort.name, output_dir)
+
+
+def _resolve_ordering(path: Path | None) -> FrequencyOrdering:
+    if path is None:
+        return PreserveOrder()
+
+    try:
+        return GeneOrder(read_gene_order(path))
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error), param_hint="--gene-order") from error
 
 
 def _resolve_annotation_source(catalog_path: Path | None) -> SnpAnnotationSource:
