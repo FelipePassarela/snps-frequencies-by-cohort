@@ -62,67 +62,21 @@ def test_preserve_order_returns_original_frequencies(
 
 
 @pytest.mark.parametrize(
-    ("filename", "expected"),
+    ("contents", "expected_rows"),
     [
-        (
-            "longa_gene_order.csv",
-            (
-                "LERFS",
-                "HK1",
-                "CPNE9",
-                "LIPA",
-                "HINT3",
-                "IMPA2",
-                "CNGB1",
-                "SYNE1",
-                "ANTXR2",
-                "JAKMIP3",
-                "PNKD",
-                "CMYA5",
-                "PIK3R5",
-                "NKAIN4",
-                "VASH1",
-                "TRPV4",
-                "CENPJ",
-                "LAMB4",
-                "GSDMD",
-            ),
-        ),
-        (
-            "grave_gene_order.csv",
-            (
-                "LINC01118",
-                "SLC23A2",
-                "CCSER1",
-                "TRIM6",
-                "ARRDC2",
-                "SNED1",
-                "PODN",
-                "SLC4A2",
-                "RNF222",
-                "ITPR1",
-                "TMEM11",
-                "COL19A1",
-                "C3",
-                "GAD2",
-                "LASP1",
-                "PTPN5",
-                "PLA2G4D",
-                "RAI14",
-                "NPC1",
-                "SCN9A",
-                "ODAD1",
-                "COLEC11",
-                "PPARGC1A",
-                "NRP2",
-                "MUC16",
-            ),
-        ),
+        ("name\nLERFS\nHK1\n", [2, 1, 3, 5, 0, 4]),
+        ("name\nHK1\nLERFS\n", [1, 3, 5, 2, 0, 4]),
     ],
 )
-def test_provided_gene_order_files_match_requested_sequences(
-    filename: str, expected: tuple[str, ...]
+def test_gene_order_csv_defines_result_order(
+    tmp_path: Path,
+    annotated_frequencies: pd.DataFrame,
+    contents: str,
+    expected_rows: list[int],
 ) -> None:
-    path = Path(__file__).resolve().parents[1] / "data" / "genotypes" / filename
+    path = tmp_path / "custom_order.csv"
+    path.write_text(contents, encoding="utf-8")
 
-    assert read_gene_order(path) == expected
+    actual = GeneOrder(read_gene_order(path)).apply(annotated_frequencies)
+
+    pd.testing.assert_frame_equal(actual, annotated_frequencies.iloc[expected_rows])
